@@ -62,7 +62,7 @@ end
 
 -- Convert to JSON
 function save_table_as_json(t)
-  local f = io.open(windower.addon_path..'data/items.json','w+b')
+  local f = io.open(windower.addon_path..'data/items.'..os.time(os.date("!*t"))..'.json','w+b')
   if not f then
     print('Cannot open/create file data/items.lua')
     return
