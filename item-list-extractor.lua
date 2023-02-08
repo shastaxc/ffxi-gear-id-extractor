@@ -3,65 +3,93 @@ _addon.author = 'Shasta'
 _addon.version = '1.0.0'
 _addon.commands = {'ile','itemlistextractor'}
 
-local http = require('ssl.https')
-local ltn12 = require('ltn12')
 require('sets')
+require('tables')
 require('logger')
+require('strings')
+res = require('resources')
+jsonlib = require('jsonlib')
 
--- 1. Download file
-function download_map()
-  -- Open a file to save content
-  local f = io.open(windower.addon_path..'data/items.lua','w+b')
+chat_purple = string.char(0x1F, 200)
+chat_grey = string.char(0x1F, 160)
+chat_red = string.char(0x1F, 167)
+chat_white = string.char(0x1F, 001)
+chat_green = string.char(0x1F, 214)
+chat_yellow = string.char(0x1F, 036)
+chat_d_blue = string.char(0x1F, 207)
+chat_pink = string.char(0x1E, 5)
+chat_l_blue = string.char(0x1E, 6)
+
+function get_items_map()
+  local categories = S{'Weapon', 'Armor'}
+  local items = res.items:category(set.contains+{categories})
+
+  -- Rekey table to use name instead of ID for keys.
+  -- De-duplicate items by name by keeping the one with highest ID. This can happen if an item can
+  -- evolve/upgrade but retain the same name (e.g. REMA upgrades)
+  local uber_table = {}
+  local prev_id
+  for id,item in pairs(items) do
+    if prev_id and prev_id ~= item.id-1 then
+      print('table is not processed sequentially')
+    end
+    uber_table[item.en:lower()] = {en=item.en, enl=item.enl, id=item.id}
+    if item.en:lower() ~= item.enl:lower() then
+      uber_table[item.enl:lower()] = {en=item.en, enl=item.enl, id=item.id}
+    end
+  end
+
+  -- Game crashes if trying to encode the whole table at once, so save as multiple tables
+  local gear_tables = {}
+  local chunk_size = 1000
+  local total_len = 0
+  local len = 0
+  local i = 1
+  for name,item in pairs(uber_table) do
+    if not gear_tables[i] then gear_tables[i] = {} end
+    gear_tables[i][name] = {en=item.en, enl=item.enl, id=item.id}
+    total_len = total_len + 1
+    len = len + 1
+    if len == chunk_size then
+      i = i + 1
+      len = 0
+    end
+  end
+
+  windower.add_to_chat(001, 'Finished chunking '..total_len..' items into '..table.length(gear_tables)..' chunks.')
+  return gear_tables
+end
+
+-- Convert to JSON
+function save_table_as_json(t)
+  local f = io.open(windower.addon_path..'data/items.json','w+b')
   if not f then
     print('Cannot open/create file data/items.lua')
     return
   end
-  
-  local output_sink = ltn12.sink.file(f)
 
-  -- Retrieve the content of a URL
-  local body, code, headers = http.request({
-    method = "GET",
-    url = 'https://raw.githubusercontent.com/Windower/Resources/master/resources_data/items.lua',
-    headers = {
-      ['Host'] = 'raw.githubusercontent.com',
-      ['User-Agent'] = 'Item Extractor Windower Addon',
-      ['Accept'] = '*/*',
-      ['Accept-Encoding'] = 'gzip, deflate, br',
-      ['Accept-Language'] = 'en-US,en;q=0.5',
-      ['Cache-Control'] = 'no-cache',
-    },
-    sink = progress_sink(output_sink)
-  })
-  windower.add_to_chat(001, 'body: '..(body or ''))
-  windower.add_to_chat(001, 'code: '..(code or ''))
-  table.vprint(headers)
-end
+  windower.add_to_chat(001, 'Start encoding table as JSON...')
 
--- this function creates a sink that forwards the downloaded chunk to another sink
-function progress_sink(output_sink)
-  -- this function is the actual sink
-  return function(chunk, err)
-    if not chunk then
-      -- if chunk is nil, then the download is finished, or we have an error
-      if err then
-        print(err)
-      else
-        print("Download finished")
-      end
+  local total_chunks = table.length(t)
+
+  -- Encode each table as a JSON string
+  for i,chunk in ipairs(t) do
+    local json_str = jsonlib.encode(chunk)
+    -- Remove opening bracket unless first chunk
+    if i > 1 then
+      json_str = json_str:sub(2)
     end
-
-    -- forward chunk and err to the underlying sink
-    return output_sink(chunk, err)
+    -- Replace closing bracket with comma unless last chunk
+    if i < total_chunks then
+      json_str = json_str:sub(1, json_str:len() - 1)
+      json_str = json_str..','
+    end
+    f:write(json_str)
   end
+
+  windower.add_to_chat(001, 'Finished encoding table as JSON!')
+  f:close()
 end
-
--- 2. Injest as lua table
-
--- 3. Transform table
-
--- 4. Convert to JSON
-
 
 windower.register_event('addon command', function(cmd, ...)
   cmd = cmd and cmd:lower()
@@ -73,20 +101,12 @@ windower.register_event('addon command', function(cmd, ...)
 
   if cmd then
     if S{'reload', 'r'}:contains(cmd) then
-      windower.send_command('lua r ffxi-gear-id-extractor')
+      windower.send_command('lua r item-list-extractor')
       windower.add_to_chat(001, chat_d_blue..'Item List Extractor: Reloading.')
-    elseif 'download' == cmd then
-      download_map()
+    elseif 'extract' == cmd then
+      local gear_tables = get_items_map()
+      save_table_as_json(gear_tables)
+      windower.add_to_chat(001, 'Extraction complete!')
     end
   end
 end)
-
-chat_purple = string.char(0x1F, 200)
-chat_grey = string.char(0x1F, 160)
-chat_red = string.char(0x1F, 167)
-chat_white = string.char(0x1F, 001)
-chat_green = string.char(0x1F, 214)
-chat_yellow = string.char(0x1F, 036)
-chat_d_blue = string.char(0x1F, 207)
-chat_pink = string.char(0x1E, 5)
-chat_l_blue = string.char(0x1E, 6)
