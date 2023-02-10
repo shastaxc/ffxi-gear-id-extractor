@@ -40,32 +40,40 @@ function waitForElm(selector) {
 
 function getImg(slotNum, name) {
   var img = document.createElement('img');
-  img.style.width = '32px';
-  img.style.height = '32px';
-
-  var map_entry
+  img.style['width'] = '32px';
+  img.style['height'] = '32px';
 
   if (name) {
-    map_entry = gearmap[name.toLowerCase()];
-    img.src = `https://static.ffxiah.com/images/icon/${map_entry.id}.png`;
-    img.title = name;
-  }
-  
-  if (!name || !map_entry) {
+    var map_entry = gearmap[name.toLowerCase()];
+    if (map_entry) {
+      img.src = `https://static.ffxiah.com/images/icon/${map_entry.id}.png`;
+      img.title = name;
+      
+      var encName = encodeURIComponent(name.trim().replaceAll(' ', '_'));
+
+      // Put images inside an anchor tag with link to bg wiki
+      var anchor = document.createElement('a');
+      anchor.href = `https://bg-wiki.com/ffxi/${encName}`;
+      anchor.target = '_blank';
+      anchor.appendChild(img);
+      return anchor;
+    } else {
+      // Warn user about broken links
+      var warning = document.createElement('div');
+      warning.style['width'] = '32px';
+      warning.style['height'] = '32px';
+      warning.style['background-color'] = 'black';
+      warning.innerHTML = `<svg viewBox="0 0 24 24" fill="yellow">
+        <path d="M0 0h24v24H0z" fill="none"/>
+        <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+      </svg>`;
+      warning.title = `Cannot find item: ${name}`;
+      return warning;
+    }
+  } else {
     img.src = `https://static.ffxiah.com/images/eq${slotNum+1}.gif`
   }
   
-  if (name) {
-    var encName = encodeURIComponent(name.trim().replace(' ', '_'));
-
-    // Put images inside an anchor tag with link to bg wiki
-    var anchor = document.createElement('a');
-    anchor.href = `https://bg-wiki.com/ffxi/${encName}`;
-    anchor.target = '_blank';
-    anchor.appendChild(img);
-    return anchor;
-  }
-
   return img;
 }
 
@@ -205,6 +213,7 @@ waitForElm('.contents').then((elm) => {
         var table = document.createElement('div');
         table.style['border'] = '1px solid #9e9e9e';
         table.style['border-radius'] = '4px';
+        table.style['max-width'] = '354px';
         var row1 = document.createElement('div');
         var th = document.createElement('div');
         th.style['display'] = 'flex';
@@ -292,7 +301,7 @@ waitForElm('.contents').then((elm) => {
             
             if (itemName && augDesc) {
               // Put images inside an anchor tag with link to bg wiki
-              var encName = encodeURIComponent(itemName.trim().replace(' ', '_'));
+              var encName = encodeURIComponent(itemName.trim().replaceAll(' ', '_'));
               var anchor = document.createElement('a');
               anchor.href = `https://bg-wiki.com/ffxi/${encName}`;
               anchor.target = '_blank';
@@ -313,6 +322,7 @@ waitForElm('.contents').then((elm) => {
               anchorContent.appendChild(nameDiv);
 
               var augDiv = document.createElement('div');
+              augDiv.style['font-size'] = '0.8rem';
               augDiv.textContent = augDesc;
               anchorContent.appendChild(augDiv);
 
