@@ -82,6 +82,7 @@ function buildGearBox(input) {
   t.style['display'] = 'block';
   t.style['margin'] = '0';
   t.style['border'] = 'none';
+  t.style['width'] = '132px';
   var tds = [];
   var trs = [];
 
@@ -141,20 +142,23 @@ function toggleDisplay(id) {
 
 function copyItems(input) {
   var copyStr = '';
+  // Add multiline comment with title and notes
+  if (input.title || input.notes) {
+    copyStr += `--[[\n${input.title ? '  ' + input.title + '\n' : ''}${input.notes ? '  ' + input.notes + '\n' : ''}]]\n`;
+  }
+  copyStr += 'sets.PlaceholderSetName = {'
   Object.values(slots).forEach((slotName, index) => {
     var itemName = input[slotName];
     var aug = input[slotName + 'Aug'];
     if (itemName) {
-      if (copyStr != '') {
-        copyStr += '\n';
-      }
-      copyStr += `${slotName}="${itemName}",`;
+      copyStr += `\n  ${slotName}="${itemName}",`;
       // If has augments, add them as an inline comment
       if (aug) {
         copyStr += ` -- ${aug}`;
       }
     }
   });
+  copyStr += '\n}\n';
   
   navigator.clipboard.writeText(copyStr);
 }
