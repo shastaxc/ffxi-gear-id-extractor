@@ -140,7 +140,7 @@ function toggleDisplay(id) {
   el.style.display = el.style.display == 'none' ? 'inline-block' : 'none';
 }
 
-function copyItems(input) {
+function copyItems(el, input) {
   var copyStr = '';
   // Add multiline comment with title and notes
   if (input.title || input.notes) {
@@ -161,6 +161,11 @@ function copyItems(input) {
   copyStr += '\n}\n';
   
   navigator.clipboard.writeText(copyStr);
+
+  el.firstChild.style['display'] = 'block';
+  setTimeout(() => {
+    el.firstChild.style['display'] = 'none';
+  }, 400)
 }
 
 // Wait for contents to exist
@@ -248,10 +253,25 @@ waitForElm('.contents').then((elm) => {
         th.appendChild(titleSpan);
 
         var copyBtn = document.createElement('button');
-        copyBtn.addEventListener('click', () => copyItems(input));
+        copyBtn.addEventListener('click', (event) => copyItems(event.currentTarget, input));
         copyBtn.style['width'] = '20px';
         copyBtn.style['height'] = '20px';
-        copyBtn.innerHTML = `<svg viewBox="0 0 115.77 122.88" fill="#9e9e9e" style="enable-background:new 0 0 115.77 122.88" xml:space="preserve">
+        copyBtn.style['position'] = 'relative';
+        
+        var copiedPopup = document.createElement('div');
+        copiedPopup.style['display'] = 'none';
+        copiedPopup.style['position'] = 'absolute';
+        copiedPopup.style['bottom'] = '-2.2rem';
+        copiedPopup.style['background'] = '#555';
+        copiedPopup.style['padding'] = '1px 5px';
+        copiedPopup.style['border-radius'] = '3px';
+        copiedPopup.style['border'] = '1px solid #888';
+        copiedPopup.style['z-index'] = '1';
+        copiedPopup.textContent = 'Copied!';
+        copyBtn.appendChild(copiedPopup);
+
+        var copyImg = document.createElement('div');
+        copyImg.innerHTML = `<svg viewBox="0 0 115.77 122.88" fill="#9e9e9e" style="enable-background:new 0 0 115.77 122.88" xml:space="preserve">
           <style type="text/css">.st0{fill-rule:evenodd;clip-rule:evenodd;}</style>
           <g>
             <path class="st0" d="M89.62,13.96v7.73h12.19h0.01v0.02c3.85,0.01,7.34,1.57,9.86,4.1c2.5,2.51,4.06,5.98,4.07,9.82h0.02v0.02
@@ -266,6 +286,7 @@ waitForElm('.contents').then((elm) => {
             v0.02c0.91,0,1.75-0.39,2.37-1.01c0.61-0.61,1-1.46,1-2.37h-0.02V108.92L105.18,108.92z"/>
           </g>
         </svg>`;
+        copyBtn.appendChild(copyImg);
         th.appendChild(copyBtn);
 
         row1.appendChild(th);
