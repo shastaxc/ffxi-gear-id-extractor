@@ -143,8 +143,8 @@ function toggleDisplay(id) {
 function copyItems(el, input) {
   var copyStr = '';
   // Add multiline comment with title and notes
-  if (input.title || input.notes) {
-    copyStr += `--[[\n${input.title ? '  ' + input.title + '\n' : ''}${input.notes ? '  ' + input.notes + '\n' : ''}]]\n`;
+  if (input.title || input.notes || input.stats) {
+    copyStr += `--[[\n${input.title ? '  ' + input.title + '\n' : ''}${input.notes ? '  ' + input.notes + '\n' : ''}${input.stats ? '  ' + input.stats + '\n' : ''}]]\n`;
   }
   copyStr += 'sets.PlaceholderSetName = {'
   Object.values(slots).forEach((slotName, index) => {
@@ -178,6 +178,7 @@ waitForElm('.contents').then((elm) => {
         var input = {
           title: el.getAttribute('data-title'),
           notes: el.getAttribute('data-notes'),
+          stats: el.getAttribute('data-stats'),
           main: el.getAttribute('data-main'),
           mainAug: el.getAttribute('data-main-aug'),
           sub: el.getAttribute('data-sub'),
@@ -360,14 +361,45 @@ waitForElm('.contents').then((elm) => {
         }
         table.appendChild(row2);
     
-        if (input.notes) {
+        if (input.stats) {
           var row3 = document.createElement('div');
-          var tdNotes = document.createElement('div');
-          tdNotes.style['padding'] = '10px';
-          tdNotes.style['border-top'] = '1px solid #9e9e9e';
-          tdNotes.textContent = input.notes;
-          row3.appendChild(tdNotes);
+          
+          var statsLabel = document.createElement('div');
+          statsLabel.style['padding'] = '0 10px';
+          statsLabel.style['border-top'] = '1px solid #9e9e9e';
+          statsLabel.style['font-size'] = '0.8rem';
+          statsLabel.style['color'] = '#9e9e9e';
+          statsLabel.style['text-decoration'] = 'underline';
+          statsLabel.textContent = 'Stats';
+          row3.appendChild(statsLabel);
+        
+          var tdStats = document.createElement('div');
+          tdStats.style['padding'] = '0 10px';
+          tdStats.style['font-size'] = '0.8rem';
+          tdStats.textContent = input.stats;
+          row3.appendChild(tdStats);
           table.appendChild(row3);
+        }
+    
+        el.appendChild(table);
+        if (input.notes) {
+          var row4 = document.createElement('div');
+
+          var notesLabel = document.createElement('div');
+          notesLabel.style['padding'] = '0 10px';
+          notesLabel.style['border-top'] = '1px solid #9e9e9e';
+          notesLabel.style['font-size'] = '0.8rem';
+          notesLabel.style['color'] = '#9e9e9e';
+          notesLabel.style['text-decoration'] = 'underline';
+          notesLabel.textContent = 'Notes';
+          row4.appendChild(notesLabel);
+        
+          var tdNotes = document.createElement('div');
+          tdNotes.style['padding'] = '0 10px';
+          tdNotes.style['font-size'] = '0.8rem';
+          tdNotes.textContent = input.notes;
+          row4.appendChild(tdNotes);
+          table.appendChild(row4);
         }
     
         el.appendChild(table);
