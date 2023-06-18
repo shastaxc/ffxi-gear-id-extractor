@@ -170,7 +170,7 @@ function copyItems(el, input) {
 
 // Wait for contents to exist
 waitForElm('.contents').then((elm) => {
-  fetch('/items.1675850181.json').then(response => {
+  fetch('/items.1687122339.json').then(response => {
     response.json().then(response_value => {
       gearmap = response_value;
       document.querySelectorAll('.gearset').forEach(function(el) {
